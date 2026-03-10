@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neural Transmitter Atlas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─────────────────────────────────────────────────
+       RESET & BASE
+    ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #020c18;
+      --bg2:       #071828;
+      --bg3:       #0d2238;
+      --border:    #0f2a40;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --dim:       #334155;
+      --accent:    #60a5fa;
+
+      /* ── NEUROTRANSMITTER COLORS — edit these freely ── */
+      --c-glu:  #f59e0b;
+      --c-gaba: #a78bfa;
+      --c-ach:  #34d399;
+      --c-vta:  #f472b6;
+      --c-sn:   #fb923c;
+      --c-5ht:  #2dd4bf;
+      --c-ne:   #60a5fa;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 60%, #040e1a 100%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ─────────────────────────────────────────────────
+       HEADER
+    ───────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      padding: 48px 16px 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 6px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 400;
+      background: linear-gradient(135deg, #93c5fd 0%, #e2e8f0 50%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--dim);
+      letter-spacing: 1px;
+    }
+
+    /* ─────────────────────────────────────────────────
+       LAYOUT
+    ───────────────────────────────────────────────── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: start;
+      padding: 40px 0;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─────────────────────────────────────────────────
+       BRAIN IMAGE PANEL
+       ── Replace the src in <img> with your own image ──
+    ───────────────────────────────────────────────── */
+    .brain-panel {
+      position: sticky;
+      top: 24px;
+    }
+
+    .brain-frame {
+      background: radial-gradient(ellipse at 40% 35%, #071828, #020c18);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      transition: border-color 0.4s, box-shadow 0.4s;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brain-frame.active {
+      /* JS will inject --active-color dynamically */
+      border-color: color-mix(in srgb, var(--active-color, #60a5fa) 25%, transparent);
+      box-shadow:
+        0 0 80px color-mix(in srgb, var(--active-color, #60a5fa) 30%, transparent),
+        0 0 25px rgba(0,0,0,0.9),
+        inset 0 0 40px rgba(0,0,0,0.4);
+    }
+
+    /* ── YOUR BRAIN IMAGE GOES HERE ──
+       Drop your image file in the same folder and
+       change the src below to your filename.
+       e.g. src="my_brain.png"
+    ── */
+    .brain-image {
+      width: 100%;
+      max-width: 420px;
+      height: auto;
+      border-radius: 12px;
+      display: block;
+    }
+
+    /* Placeholder shown until you add a real image */
+    .brain-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: var(--dim);
+      text-align: center;
+      padding: 40px;
+    }
+
+    .brain-placeholder .icon {
+      font-size: 72px;
+      opacity: 0.4;
+      filter: grayscale(1);
+    }
+
+    .brain-placeholder p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--border);
+      max-width: 220px;
+      line-height: 1.8;
+    }
+
+    .brain-placeholder code {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Active color glow overlay on brain frame */
+    .brain-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: radial-gradient(ellipse at 50% 50%,
+        color-mix(in srgb, var(--active-color, transparent) 8%, transparent),
+        transparent 70%);
+      pointer-events: none;
+      transition: background 0.4s;
+    }
+
+    /* ─────────────────────────────────────────────────
+       LEGEND PILLS
+    ───────────────────────────────────────────────── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+      justify-content: center;
+    }
+
+    .pill {
+      background: transparent;
+      border: 1px solid;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pill:hover { opacity: 0.85; }
+    .pill.active { color: #000 !important; }
+
+    /* ─────────────────────────────────────────────────
+       INFO PANEL
+    ───────────────────────────────────────────────── */
+    .info-panel {
+      min-height: 420px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      color: var(--dim);
+      text-align: center;
+      gap: 14px;
+    }
+
+    .empty-state .dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .empty-state .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    .empty-state p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .empty-state small {
+      font-size: 12px;
+      color: var(--border);
+      max-width: 200px;
+      line-height: 1.8;
+    }
+
+    /* Card */
+    .card {
+      background: rgba(4, 14, 26, 0.96);
+      border: 1px solid;
+      border-radius: 16px;
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .card-glow-corner {
+      position: absolute;
+      bottom: -20px; right: -20px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Card header */
+    .card-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      opacity: 0.65;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+
+    .card-region {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    /* Role box */
+    .role-box {
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .role-box .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .role-box p {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    /* Functions list */
+    .functions { margin-bottom: 16px; }
+
+    .functions .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .fn-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: flex-start;
+    }
+
+    .fn-arrow {
+      font-size: 9px;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .fn-text {
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+
+    /* Two-column grid */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .mini-box {
+      border-radius: 8px;
+      padding: 11px 13px;
+    }
+
+    .mini-box .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .mini-item {
+      font-size: 11px;
+      margin-bottom: 3px;
+      line-height: 1.5;
+    }
+
+    /* Fact box */
+    .fact-box {
+      border-radius: 0 8px 8px 0;
+      border-left: 3px solid;
+      padding: 11px 14px;
+    }
+
+    .fact-box .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .fact-box p {
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    /* ─────────────────────────────────────────────────
+       FULL REFERENCE SECTION
+       (scrollable table below the hero)
+    ───────────────────────────────────────────────── */
+    .reference-section {
+      padding: 60px 0 80px;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-heading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 6px;
+      color: var(--dim);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .ref-card {
+      background: rgba(4,14,26,0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .ref-card:hover {
+      box-shadow: 0 0 24px rgba(96,165,250,0.1);
+    }
+
+    .ref-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .ref-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .ref-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-weight: 400;
+      color: #e2e8f0;
+    }
+
+    .ref-region {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .ref-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .ref-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: var(--bg3);
+      color: var(--dim);
+    }
+
+    /* ─────────────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 24px 16px;
+      border-top: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--border);
+    }
+
+    /* ─────────────────────────────────────────────────
+       ANIMATIONS
+    ───────────────────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card { animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       HEADER — edit title and subtitle here
+  ═══════════════════════════════════════════════ -->
+  <header>
+    <div class="header-eyebrow">Neuroscience Interactive</div>
+    <h1>Neural Transmitter Atlas</h1>
+    <p>Select a neurotransmitter below to explore its system</p>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN SECTION
+  ═══════════════════════════════════════════════ -->
+  <div class="container">
+    <div class="main-grid">
+
+      <!-- LEFT: Brain image + legend pills -->
+      <div class="brain-panel">
+        <div class="brain-frame" id="brainFrame">
+
+          <!-- ══════════════════════════════════════
+               YOUR BRAIN IMAGE — edit src below
+               Replace "your-brain-image.png" with
+               the filename of your image.
+               Make sure the image is in the same
+               folder as this HTML file.
+          ══════════════════════════════════════ -->
+          <!--
+          <img
+            src="your-brain-image.png"
+            alt="Lateral view of the human brain"
+            class="brain-image"
+          />
+          -->
+
+          <!-- PLACEHOLDER — delete this block once
+               you add your real brain image above -->
+          <div class="brain-placeholder">
+            <div class="icon">🧠</div>
+            <p>Add your brain image here</p>
+            <p>Uncomment the <code>&lt;img&gt;</code> tag above and set<br/>
+            <code>src="your-filename.png"</code></p>
+          </div>
+          <!-- END PLACEHOLDER -->
+
+        </div>
+
+        <!-- Legend pills — auto-generated by JS -->
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <!-- RIGHT: Info panel -->
+      <div class="info-panel" id="infoPanel">
+        <div class="empty-state" id="emptyState">
+          <div class="dots" id="emptyDots"></div>
+          <p>Select a system</p>
+          <small>Click any pill below the brain image to explore a neurotransmitter</small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       REFERENCE CARDS SECTION
+  ═══════════════════════════════════════════════ -->
+  <div class="container">
+    <div class="reference-section">
+      <div class="section-heading">All Systems — Quick Reference</div>
+      <div class="ref-grid" id="refGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER — edit credit text here
+  ═══════════════════════════════════════════════ -->
+  <footer>
+    Neural Transmitter Atlas &nbsp;·&nbsp; 7 Systems &nbsp;·&nbsp; Interactive Reference
+  </footer>
+
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    //  DATA — Edit neurotransmitter info here
+    // ═══════════════════════════════════════════════════════
+    const NT = [
+      {
+        key: "glutamate",
+        name: "Glutamate",
+        color: "#f59e0b",
+        label: "GLU",
+        region: "Widespread — cortex, hippocampus, cerebellum",
+        role: "The brain's primary excitatory neurotransmitter. Nearly every fast excitatory signal in the brain uses glutamate.",
+        functions: [
+          "Learning and memory formation (LTP at NMDA receptors)",
+          "Sensory processing and motor control",
+          "Neural development and synaptic plasticity"
+        ],
+        disorders: ["Excitotoxicity (stroke, TBI)", "Schizophrenia", "ALS", "Alzheimer's disease"],
+        drugs: ["Memantine (Alzheimer's)", "Ketamine (depression/anesthesia)", "PCP"],
+        fact: "Glutamate is involved in over 90% of excitatory synaptic transmission in the brain."
+      },
+      {
+        key: "gaba",
+        name: "GABA",
+        color: "#a78bfa",
+        label: "GABA",
+        region: "Widespread — cortex, cerebellum, basal ganglia, limbic system",
+        role: "The brain's primary inhibitory neurotransmitter — the 'brake' on neural circuits that prevents runaway excitation.",
+        functions: [
+          "Reduces neuronal excitability across circuits",
+          "Regulates anxiety and fear responses",
+          "Controls sleep, muscle tone, and seizure threshold"
+        ],
+        disorders: ["Anxiety disorders", "Epilepsy", "Insomnia", "Huntington's disease"],
+        drugs: ["Benzodiazepines (Xanax, Valium)", "Barbiturates", "Alcohol", "Gabapentin"],
+        fact: "About 20% of all neurons in the brain are GABAergic interneurons."
+      },
+      {
+        key: "acetylcholine",
+        name: "Acetylcholine",
+        color: "#34d399",
+        label: "ACh",
+        region: "Basal Forebrain → Cortex & Hippocampus",
+        role: "Projects from the basal forebrain to the cortex and hippocampus — central to arousal, attention, and memory encoding.",
+        functions: [
+          "Attention and sustained focus",
+          "Encoding new memories via hippocampal LTP",
+          "Arousal and REM sleep transitions",
+          "Voluntary movement at the neuromuscular junction"
+        ],
+        disorders: ["Alzheimer's disease (major ACh loss)", "Myasthenia gravis", "Lewy body dementia"],
+        drugs: ["Donepezil / Aricept (Alzheimer's)", "Nicotine", "Atropine", "Nerve agents (VX, Sarin)"],
+        fact: "Alzheimer's is characterized by loss of basal forebrain cholinergic neurons — why cholinesterase inhibitors are first-line treatment."
+      },
+      {
+        key: "dopamine_vta",
+        name: "Dopamine (VTA)",
+        color: "#f472b6",
+        label: "DA-VTA",
+        region: "Ventral Tegmental Area → Nucleus Accumbens, Prefrontal Cortex",
+        role: "The mesolimbic and mesocortical pathways drive reward anticipation, motivation, and executive function.",
+        functions: [
+          "Reward prediction and motivation ('wanting')",
+          "Reinforcement learning via prediction error",
+          "Working memory and prefrontal executive control",
+          "Goal-directed behavior"
+        ],
+        disorders: ["Addiction", "Schizophrenia (hyperdopaminergia)", "ADHD", "Depression"],
+        drugs: ["Cocaine / Amphetamine (block reuptake)", "Antipsychotics (D2 blockers)", "Methylphenidate (Ritalin)"],
+        fact: "Dopamine signals 'prediction error' — firing when rewards exceed expectations, dropping when they disappoint."
+      },
+      {
+        key: "dopamine_sn",
+        name: "Dopamine (Substantia Nigra)",
+        color: "#fb923c",
+        label: "DA-SN",
+        region: "Substantia Nigra → Striatum (Basal Ganglia)",
+        role: "The nigrostriatal pathway controls initiation and smooth coordination of voluntary movement.",
+        functions: [
+          "Initiating voluntary movement",
+          "Motor learning and habit formation",
+          "Cortex–basal ganglia coordination"
+        ],
+        disorders: ["Parkinson's disease (60–80% neuron loss before symptoms)", "Huntington's disease", "Tardive dyskinesia"],
+        drugs: ["Levodopa (L-DOPA)", "Dopamine agonists (pramipexole)", "MAO-B inhibitors (selegiline)"],
+        fact: "The substantia nigra is named for its dark neuromelanin pigment — visibly pale in Parkinson's patients due to cell death."
+      },
+      {
+        key: "serotonin",
+        name: "Serotonin",
+        color: "#2dd4bf",
+        label: "5-HT",
+        region: "Raphe Nuclei → Cortex, Limbic System, Spinal Cord",
+        role: "Projects from the raphe nuclei throughout the entire brain, modulating mood, emotion, and physiological rhythms.",
+        functions: [
+          "Mood regulation and emotional stability",
+          "Sleep-wake cycle and circadian rhythm",
+          "Appetite and satiety signaling",
+          "Pain modulation and impulse control"
+        ],
+        disorders: ["Major depressive disorder", "Anxiety disorders", "OCD", "PTSD", "Eating disorders"],
+        drugs: ["SSRIs (Prozac, Zoloft)", "SNRIs (Effexor)", "MAOIs", "Psilocybin / LSD (5-HT2A agonists)"],
+        fact: "About 90% of the body's serotonin is found in the gut — contributing to the gut-brain axis."
+      },
+      {
+        key: "norepinephrine",
+        name: "Norepinephrine",
+        color: "#60a5fa",
+        label: "NE",
+        region: "Locus Coeruleus → PFC, Amygdala, Spinal Cord",
+        role: "Despite only ~15,000 neurons, the locus coeruleus projects to virtually every brain region — the brain's alarm and arousal center.",
+        functions: [
+          "Arousal, alertness, and vigilance",
+          "Fight-or-flight stress response",
+          "Attention focus and signal amplification",
+          "Emotional memory consolidation via amygdala"
+        ],
+        disorders: ["PTSD (hyperactive locus coeruleus)", "ADHD", "Depression", "Panic disorder"],
+        drugs: ["SNRIs (Effexor)", "Atomoxetine (Strattera)", "Clonidine", "Beta-blockers"],
+        fact: "Stress and danger dramatically increase locus coeruleus firing — flooding the brain with NE, creating PTSD's hypervigilant state."
+      }
+    ];
+
+    // ═══════════════════════════════════════════════════════
+    //  STATE
+    // ═══════════════════════════════════════════════════════
+    let activeKey = null;
+
+    // ═══════════════════════════════════════════════════════
+    //  RENDER FUNCTIONS
+    // ═══════════════════════════════════════════════════════
+
+    function hex(color, alpha) {
+      // Convert hex color + alpha 0-1 to rgba
+      const r = parseInt(color.slice(1,3),16);
+      const g = parseInt(color.slice(3,5),16);
+      const b = parseInt(color.slice(5,7),16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function renderLegend() {
+      const el = document.getElementById('legend');
+      el.innerHTML = NT.map(nt => `
+        <button
+          class="pill ${activeKey === nt.key ? 'active' : ''}"
+          style="
+            color: ${activeKey === nt.key ? '#000' : nt.color};
+            border-color: ${nt.color};
+            background: ${activeKey === nt.key ? nt.color : 'transparent'};
+            opacity: ${activeKey && activeKey !== nt.key ? '0.3' : '1'};
+            box-shadow: ${activeKey === nt.key ? `0 0 14px ${hex(nt.color, 0.4)}` : 'none'};
+          "
+          onclick="selectNT('${nt.key}')"
+        >${nt.label}</button>
+      `).join('');
+    }
+
+    function renderInfo() {
+      const panel = document.getElementById('infoPanel');
+
+      if (!activeKey) {
+        panel.innerHTML = `
+          <div class="empty-state">
+            <div class="dots">
+              ${NT.map(nt => `<div class="dot" style="background:${nt.color}"></div>`).join('')}
+            </div>
+            <p>Select a system</p>
+            <small>Click any pill below the brain image to explore a neurotransmitter</small>
+          </div>`;
+        return;
+      }
+
+      const nt = NT.find(n => n.key === activeKey);
+      panel.innerHTML = `
+        <div class="card" style="border-color: ${hex(nt.color, 0.18)};">
+          <div class="card-top-bar"
+            style="background: linear-gradient(90deg, transparent, ${nt.color}, transparent)">
+          </div>
+          <div class="card-glow-corner"
+            style="background: radial-gradient(circle, ${hex(nt.color, 0.06)}, transparent 70%)">
+          </div>
+
+          <div class="card-eyebrow" style="color:${nt.color}">Neurotransmitter System</div>
+          <div class="card-title">${nt.name}</div>
+          <div class="card-region">📍 ${nt.region}</div>
+
+          <div class="role-box"
+            style="background:${hex(nt.color,0.06)}; border:1px solid ${hex(nt.color,0.12)}">
+            <div class="label" style="color:${nt.color}">Role</div>
+            <p>${nt.role}</p>
+          </div>
+
+          <div class="functions">
+            <div class="label">Key Functions</div>
+            ${nt.functions.map(f => `
+              <div class="fn-item">
+                <span class="fn-arrow" style="color:${nt.color}">▸</span>
+                <span class="fn-text">${f}</span>
+              </div>`).join('')}
+          </div>
+
+          <div class="two-col">
+            <div class="mini-box"
+              style="background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.1)">
+              <div class="label" style="color:#ef4444">Disorders</div>
+              ${nt.disorders.map(d => `<div class="mini-item" style="color:#fca5a5">• ${d}</div>`).join('')}
+            </div>
+            <div class="mini-box"
+              style="background:rgba(34,197,94,0.05); border:1px solid rgba(34,197,94,0.1)">
+              <div class="label" style="color:#22c55e">Drugs / Targets</div>
+              ${nt.drugs.map(d => `<div class="mini-item" style="color:#86efac">• ${d}</div>`).join('')}
+            </div>
+          </div>
+
+          <div class="fact-box"
+            style="background:${hex(nt.color,0.06)}; border-left-color:${nt.color}">
+            <div class="label" style="color:${nt.color}">Key Fact</div>
+            <p>"${nt.fact}"</p>
+          </div>
+        </div>`;
+    }
+
+    function renderBrainFrame() {
+      const frame = document.getElementById('brainFrame');
+      const nt = activeKey ? NT.find(n => n.key === activeKey) : null;
+      if (nt) {
+        frame.classList.add('active');
+        frame.style.setProperty('--active-color', nt.color);
+      } else {
+        frame.classList.remove('active');
+        frame.style.removeProperty('--active-color');
+      }
+    }
+
+    function renderRefGrid() {
+      const grid = document.getElementById('refGrid');
+      grid.innerHTML = NT.map(nt => `
+        <div class="ref-card" onclick="selectNT('${nt.key}')"
+          style="border-color: ${activeKey === nt.key ? hex(nt.color,0.4) : ''};
+                 box-shadow: ${activeKey === nt.key ? `0 0 20px ${hex(nt.color,0.15)}` : ''}">
+          <div class="ref-card-header">
+            <div class="ref-dot" style="background:${nt.color}; box-shadow: 0 0 8px ${hex(nt.color,0.6)}"></div>
+            <div class="ref-name">${nt.name}</div>
+          </div>
+          <div class="ref-region">📍 ${nt.region}</div>
+          <div class="ref-tags">
+            ${nt.disorders.slice(0,2).map(d => `<span class="ref-tag">${d}</span>`).join('')}
+            ${nt.drugs.slice(0,1).map(d => `<span class="ref-tag" style="color:${hex(nt.color,0.9)}">${d}</span>`).join('')}
+          </div>
+        </div>`).join('');
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  SELECT HANDLER
+    // ═══════════════════════════════════════════════════════
+    function selectNT(key) {
+      activeKey = activeKey === key ? null : key;
+      renderLegend();
+      renderInfo();
+      renderBrainFrame();
+      renderRefGrid();
+
+      // Scroll info panel into view on mobile
+      if (activeKey && window.innerWidth < 768) {
+        document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════════════════
+    renderLegend();
+    renderInfo();
+    renderRefGrid();
+  </script>
+</body>
+</html>
